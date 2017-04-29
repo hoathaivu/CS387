@@ -1,0 +1,2 @@
+javac -cp libs/jdom.jar:libs/jargs.jar:libs/java-cup-11a-runtime.jar:libs/xercesImpl.jar $(find . -name '*.java')
+java -cp libs/jdom.jar:libs/jargs.jar:libs/java-cup-11a-runtime.jar:libs/xercesImpl.jar:src s3/base/Main
