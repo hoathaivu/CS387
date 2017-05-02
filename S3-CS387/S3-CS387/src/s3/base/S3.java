@@ -573,7 +573,7 @@ public class S3 {
 			for (int j = 0; j < size; j++) {
 				int xLoc = x + i;
 				int yLoc = y + j;
-				if (xLoc <= 0 || yLoc <= 0 || xLoc >= getMap().width || yLoc >= getMap().height) {
+				if (xLoc < 0 || yLoc < 0 || xLoc >= getMap().width || yLoc >= getMap().height) {
 					return false;
 				}
 				if (!(mapEntityAt(xLoc, yLoc) instanceof WOGrass) || null != entityAt(xLoc, yLoc)) {

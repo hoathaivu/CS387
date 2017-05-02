@@ -29,9 +29,6 @@ public class AStar {
 			return;
 		}
 
-		//clone to test for collision
-		S3PhysicalEntity entity = (S3PhysicalEntity) i_entity.clone();
-
 		// A*
 		//initialize the open list
 		ArrayList<ANode> open = new ArrayList<ANode>();
@@ -47,7 +44,7 @@ public class AStar {
 			//pop q off the open list
 			ANode q = open.remove(findMinIndex(open));
 			//generate q's successors and set their parents to q
-			List<ANode> successors = getNextPossibleMoves(the_game, entity, q, goal_x, goal_y);
+			List<ANode> successors = getNextPossibleMoves(the_game, q, goal_x, goal_y);
 			//if successor is the goal, stop the search
 			for (int i = 0; i < successors.size(); i++) {
 				ANode cur = successors.get(i);
@@ -74,7 +71,6 @@ public class AStar {
 				path.add(new Pair<Double, Double>((double) goal_x, (double) goal_y));
 				//while current step is not the start
 				while (cur_step.parent != null) {
-					//System.out.println(the_game.mapEntityAt(cur_step.x, cur_step.y).toString());
 					path.add(0, new Pair<Double, Double>((double) cur_step.x, (double) cur_step.y));
 					cur_step = cur_step.parent;
 				}
@@ -97,7 +93,7 @@ public class AStar {
 		return min;
 	}
 
-	private List<ANode> getNextPossibleMoves(S3 the_game, S3PhysicalEntity entity, ANode q, double goal_x, double goal_y) {
+	private List<ANode> getNextPossibleMoves(S3 the_game, ANode q, double goal_x, double goal_y) {
 		List<ANode> moves = new ArrayList<ANode>();
 
 		//move up
@@ -117,25 +113,13 @@ public class AStar {
 		right.f = right.g + right.h;
 		moves.add(right);
 
-		//check if out-of-bound
+		//check out-of-bound and collision
 		int i = 0;
 		while (i < moves.size())
-			if (moves.get(i).x < 0 || moves.get(i).y < 0)
+			if (!the_game.isSpaceFree(1, moves.get(i).x, moves.get(i).y))
 				moves.remove(i);
 			else
 				i++;
-
-		//check collision
-		i = 0;
-		while (i < moves.size()) {
-			ANode move = moves.get(i);
-			entity.setX(move.x);
-			entity.setY(move.y);
-			if (the_game.anyLevelCollision(entity) != null)
-				moves.remove(i);
-			else
-				i++;
-		}
 
 		return moves;
 	}
