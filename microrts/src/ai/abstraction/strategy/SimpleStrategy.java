@@ -17,16 +17,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 
-/*
-Predefined predicates' values:
-1 - idle
-2 - own(UnitType)
-3 - enoughResourcesFor(UnitType)
-4 - ~idle
-5 - ~own(UnitType)
-6 - ~enoughResourcesFor(UnitType)
-*/
-
 public class SimpleStrategy extends AbstractionLayerAI {
     protected UnitTypeTable utt;
     UnitType workerType;
@@ -34,12 +24,14 @@ public class SimpleStrategy extends AbstractionLayerAI {
     UnitType barracksType;
     UnitType lightType;
 
-    String[] rulesInText;
     private final String ruleFileName = "rules-simple.txt";
+    private final String varRepresentations = "X";
     KnowledgeBase kb;
+    List<Rule> rules;
 
     public SimpleStrategy(UnitTypeTable a_utt) {
         this(a_utt, new AStarPathFinding());
+        readRuleFile();
     }
 
     public SimpleStrategy(UnitTypeTable a_utt, PathFinding a_pf) {
@@ -49,6 +41,7 @@ public class SimpleStrategy extends AbstractionLayerAI {
         baseType = utt.getUnitType("Base");
         barracksType = utt.getUnitType("Barracks");
         lightType = utt.getUnitType("Light");
+        readRuleFile();
     }
 
     public void reset() {
@@ -56,14 +49,14 @@ public class SimpleStrategy extends AbstractionLayerAI {
     }
 
     public AI clone() {
-        return new LightRush(utt, pf);
+        return new SimpleStrategy(utt, pf);
     }
 
     public PlayerAction getAction(int player, GameState gs) {
-
+        populateKnowledgeBase(gs);
     }
 
-    public void readRuleFile() throws Exception {
+    private void readRuleFile() throws Exception {
        String all = "";
        String line = null;
 
@@ -84,24 +77,49 @@ public class SimpleStrategy extends AbstractionLayerAI {
        all = all.replaceAll("(?m)^[ \t]*\r?\n", "");
        System.out.println(all);
 
-       rulesInText = all.split("\\r?\\n");
+       intepretRuleFile(all.split("\\r?\\n"));
     }
 
     //a rule must have following format: rule name + ":-" + conditions + "."
-    public void intepretRuleFile() {
+    private void intepretRuleFile(String rulesInText) {
+        rules = new ArrayList<Rule>();
         for (String currentRule : rulesInText) {
-            String name = currentRules.substring(0, currentRules.indexOf(":-")).trim();
-            String conditionsString = currentRules.substring(currentRules.indexOf(":-") + 2, currentRule.indexOf(".")).trim();
+            String name = currentRule.substring(0, currentRules.indexOf("(\"")).trim();
+            String unitTypeToConsider = currentRule.substring(currentRule.indexOf("(\"") + 1, currentRule.indexOf("\")"));
+            String conditionsString = currentRule.substring(currentRules.indexOf(":-") + 2, currentRule.indexOf(".")).trim();
             String[] conditions = conditionsString.split(",");
+
+            //retrieve rule's patterns
             ArrayList<Term> patterns = new ArrayList<Term>();
             for (String condition : conditions) {
-                condition = condition.trim();
-                if (condition.charAt(0) == '~')
+                //retrieve functor
+                String functor = condition.substring(0, condition.indexOf("("));
+                String p1 = "";
+                if (functor.contains("idle"))
+                    p1 = unitTypeToConsider;
+                else
+                    p1 = condition.substring(condition.indexOf("(") + 1, condition.indexOf(")"));
+                patterns.add(new Term(functor, "X", p1));
             }
+
+            //retrieve rule's effect
+            ArrayList<Term> effects = new ArrayList<Term>();
+            String[] splitUpperCase = name.split("(?=\\p{Upper})");
+            String action = splitUpperCase[1];
+            String target = "";
+            if (splitUpperCase.length == 3)
+                target = splitUpperCase[2];
+            String functor = "a" + action.toLowerCase();
+            if (target.length() != 0)
+                effects.add(new Term(functor, "X", unitTypeToConsider, target));
+            else
+                effects.add(new Term(functor, "X", unitTypeToConsider));
+
+            rules.add(new Rule(patterns, effects, new int[] {1}));
         }
     }
 
-   public void populateKnowledgeBase(GameState gs) {
+   private void populateKnowledgeBase(GameState gs) {
         kb = new KnowledgeBase();
         PhysicalGameState pgs = gs.getPhysicalGameState();
 
@@ -129,16 +147,16 @@ public class SimpleStrategy extends AbstractionLayerAI {
         for (Unit u : pgs.getUnits()) {
             //idle
             if (gs.getActionAssignment(u) == null)
-                kb.add(new Term(1, u.getPlayer(), u.getType().name));
+                kb.add(new Term("idle", Integer.toString(u.getPlayer()), u.getType().name));
             //own
             if (playersOwnedUnits.get(u.getPlayer()).get(u.getType().name).intValue() == 0) {
-                kb.add(new Term(2, u.getPlayer(), u.getType().name));
+                kb.add(new Term("own", Integer.toString(u.getPlayer()), u.getType().name));
                 playersOwnedUnits.get(u.getPlayer()).put(u.getType().name, 1);
             }
             //enoughResourcesFor
             if (gs.getPlayer(u.getPlayer()).getResources() >= u.getType().cost)
                 if (playersEnoughResourcesUnits.get(u.getPlayer()).get(u.getType().name).intValue() == 0) {
-                    kb.add(new Term(3, u.getPlayer(), u.getType().name));
+                    kb.add(new Term("enoughResourcesFor", Integer.toString(u.getPlayer()), u.getType().name));
                     playersEnoughResourcesUnits.get(u.getPlayer()).put(u.getType().name, 1);
                 }
         }
