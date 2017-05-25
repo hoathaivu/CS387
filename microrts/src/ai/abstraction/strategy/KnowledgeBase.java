@@ -11,11 +11,15 @@ public KnowledgeBase {
         facts = new ArrayList<Term>();
     }
 
-    public add(Term t) {
+    public void add(Term t) {
         facts.add(t);
     }
 
-    public clear() {
+    public void clear() {
         facts.clear();
+    }
+
+    public List<Term> getFacts() {
+        return facts;
     }
 }

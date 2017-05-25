@@ -30,16 +30,14 @@ class Term {
         parameters = new String[0];
     }
 
-    //status (e.g. idle, enoughResourcesFor) or actions whose targets are determined by system
-    public Term(String functorS, String player, String p1) {
+    public Term(String functorS, String[] p) {
         functor = functorIntepretation.get(functorS);
-        parameters = new String[] {player, p1};
+        parameters = p;
     }
 
-    //action (e.g. attack) whose targets are determined by player
-    public Term(String functorS, String player, String p1, String p2) {
-        functor = functorIntepretation.get(functorS);
-        parameters = new String[] {player, p1, p2};
+    public Term(int functor, String[] p) {
+        this.functor = functor;
+        parameters = p;
     }
 
     public int getFunctor() {
@@ -48,5 +46,14 @@ class Term {
 
     public String[] getParameters() {
         return parameters;
+    }
+
+    public void setParameters(String[] p) {
+        parameters = p;
+    }
+
+    public Term clone() {
+        Term T = new Term(functor, parameters);
+        return T;
     }
 }

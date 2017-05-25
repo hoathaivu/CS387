@@ -1,7 +1,6 @@
 package ai.abstraction.strategy;
 
-import ai.abstraction.strategy.KnowledgeBase;
-import ai.abstraction.strategy.Term;
+import ai.abstraction.strategy.*;
 
 import rts.GameState;
 import rts.PhysicalGameState;
@@ -15,7 +14,9 @@ import ai.core.ParameterSpecification;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class SimpleStrategy extends AbstractionLayerAI {
     protected UnitTypeTable utt;
@@ -53,7 +54,8 @@ public class SimpleStrategy extends AbstractionLayerAI {
     }
 
     public PlayerAction getAction(int player, GameState gs) {
-        populateKnowledgeBase(gs);
+        //populateKnowledgeBase(gs);
+        populateKnowledgeBase(player, gs);
     }
 
     private void readRuleFile() throws Exception {
@@ -99,7 +101,7 @@ public class SimpleStrategy extends AbstractionLayerAI {
                     p1 = unitTypeToConsider;
                 else
                     p1 = condition.substring(condition.indexOf("(") + 1, condition.indexOf(")"));
-                patterns.add(new Term(functor, "X", p1));
+                patterns.add(new Term(functor, new String[] {"X", p1}));
             }
 
             //retrieve rule's effect
@@ -111,15 +113,49 @@ public class SimpleStrategy extends AbstractionLayerAI {
                 target = splitUpperCase[2];
             String functor = "a" + action.toLowerCase();
             if (target.length() != 0)
-                effects.add(new Term(functor, "X", unitTypeToConsider, target));
+                effects.add(new Term(functor, new String[] {"X", unitTypeToConsider, target}));
             else
-                effects.add(new Term(functor, "X", unitTypeToConsider));
+                effects.add(new Term(functor, new String[] {"X", unitTypeToConsider}));
 
             rules.add(new Rule(patterns, effects, new int[] {1}));
         }
     }
 
-   private void populateKnowledgeBase(GameState gs) {
+    private void populateKnowledgeBase(int player, GameState gs) {
+        kb = new KnowledgeBase();
+        PhysicalGameState pgs = gs.getPhysicalGameState();
+
+        //create a table of possible units for player
+        HashMap<String, Integer> ownedUnits = new HashMap<String, Integer>();
+        for (UnitType ut : utt.getUnitTypes())
+            ownedUnits.put(ut.name, 0);
+
+        //create a table of resources for unit
+        <String, Integer> enoughResourcesUnits = new HashMap<String, Integer>();
+        for (UnitType ut : utt.getUnitTypes())
+            enoughResourcesUnits.put(ut.name, 0);
+
+        //add all available positive knowledge
+        for (Unit u : pgs.getUnits())
+            if (u.getPlayer() == player)
+                //idle
+                if (gs.getActionAssignment(u) == null)
+                    kb.add(new Term("idle", new String[] {Integer.toString(player), u.getType().name}));
+                //own
+                if (ownedUnits.get(u.getType().name).intValue() == 0) {
+                    kb.add(new Term("own", new String[] {Integer.toString(player), u.getType().name}));
+                    ownedUnits.put(u.getType().name, 1);
+                }
+                //enoughResourcesFor
+                if (gs.getPlayer(player).getResources() >= u.getType().cost)
+                    if (enoughResourcesUnits.get(u.getType().name).intValue() == 0) {
+                        kb.add(new Term("enoughResourcesFor", new String[] {Integer.toString(player), u.getType().name}));
+                        enoughResourcesUnits.put(u.getType().name, 1);
+                    }
+    }
+
+/*
+    private void populateKnowledgeBase(GameState gs) {
         kb = new KnowledgeBase();
         PhysicalGameState pgs = gs.getPhysicalGameState();
 
@@ -147,20 +183,114 @@ public class SimpleStrategy extends AbstractionLayerAI {
         for (Unit u : pgs.getUnits()) {
             //idle
             if (gs.getActionAssignment(u) == null)
-                kb.add(new Term("idle", Integer.toString(u.getPlayer()), u.getType().name));
+                kb.add(new Term("idle", new String[] {Integer.toString(u.getPlayer()), u.getType().name}));
             //own
             if (playersOwnedUnits.get(u.getPlayer()).get(u.getType().name).intValue() == 0) {
-                kb.add(new Term("own", Integer.toString(u.getPlayer()), u.getType().name));
+                kb.add(new Term("own", new String[] {Integer.toString(u.getPlayer()), u.getType().name}));
                 playersOwnedUnits.get(u.getPlayer()).put(u.getType().name, 1);
             }
             //enoughResourcesFor
             if (gs.getPlayer(u.getPlayer()).getResources() >= u.getType().cost)
                 if (playersEnoughResourcesUnits.get(u.getPlayer()).get(u.getType().name).intValue() == 0) {
-                    kb.add(new Term("enoughResourcesFor", Integer.toString(u.getPlayer()), u.getType().name));
+                    kb.add(new Term("enoughResourcesFor", new String[] {Integer.toString(u.getPlayer()), u.getType().name}));
                     playersEnoughResourcesUnits.get(u.getPlayer()).put(u.getType().name, 1);
                 }
         }
-   }
+    }
+*/
+
+    private HashMap<String, String> doUnification(List<Term> patterns, KnowledgeBase kb) {
+        if (patterns.size() == 1)
+            return doSimpleKBUnification(patterns.get(0), kb);
+
+        HashMap<String, String> finalbinding = new HashMap<String, String>();
+        for (Term T : patterns) {
+            
+        }
+
+        return finalbinding;
+    }
+
+    private HashMap<String, String> doSimpleKBUnification(Term T1, KnowledgeBase kb) {
+        if (kb == null)
+            return null;
+
+        for (Term S : kb.getFacts()) {
+            String[] b = doSingleTermUnification(T1, S);
+            if (bindings != null) {
+                HashMap<String, String> bindings = new HashMap<String, String>();
+                String[] T1p = T1.getParameters();
+                for (int i = 0; i < b.length; i++)
+                    if (varRepresentations.contains(T1p[i]))
+                        bindings.put(T1p[i], b[i]);
+                return bindings;
+            }
+        }
+
+        return null;
+    }
+
+    private HashMap<String, String> doAndClauseKBUnification(Term T1, Term T2, KnowledgeBase kb) {
+        if (kb == null)
+            return null;
+
+        for (Term S1 : kb.getFacts()) {
+            HashMap<String, String> bindings1 = doSingleTermUnification(T1, S1);
+            if (bindings1 != null) {
+                Term T = applyBindings(T2, bindings1);
+                for (Term S2 : kb.getFacts()) {
+                    HashMap<String, String> bindings2 = doSingleTermUnification(T, S2);
+                    if (bindings2 != null)
+                        return bindings2;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /*
+    *T1 may contains variables
+    *T2 must not contain variables
+    */
+    private HashMap<String, String> doSingleTermUnification (Term T1, TermT2) {
+        if (T1 == null || T2 == null)
+            return null;
+
+        if (T1.getFunctor() != T2.getFunctor())
+            return null;
+
+        String[] p1 = T1.getParameters();
+        String[] p2 = T2.getParameters();
+        if (p1.length != p2.length)
+            return null;
+
+        HashMap<String, String> bindings = new HashMap<String, String>();
+        for (int i = 0; i < p1.length; i++)
+            if (varRepresentations.contains(p1[i]))
+                bindings.put(p1[i], p2[i]);
+            else if (!p1[i].equals(p2[i]))
+                return null;
+
+        return bindings;
+    }
+
+    private Term applyBindings(Term T, HashMap<String, String> binding) {
+        Term T1 = T.clone();
+
+        if (!binding.isEmpty()) {
+            String[] T1p = T1.getParameters();
+            for (String s : binding.keySet())
+                if (!Arrays.asList(T1p).contains(s))
+                    return null;
+                else
+                    for (int i = 0; i < T1p.length; i++)
+                        if (T1p[i].equals(s))
+                            T1p[i] = binding.get(s);
+        }
+
+        return T1;
+    }
 
     @Override
     public List<ParameterSpecification> getParameters() {
