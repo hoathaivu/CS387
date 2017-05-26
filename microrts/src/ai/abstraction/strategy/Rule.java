@@ -5,7 +5,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.List;
 
-public Rule {
+public class Rule {
     List<Term> patterns;
     List<Term> effects;
     int[] effectTypes;
@@ -26,5 +26,12 @@ public Rule {
 
     public int[] getEffectTypes() {
         return effectTypes;
+    }
+
+    public void replaceVariable(String var, String val) {
+        for (Term t : patterns)
+            t.replaceVariable(var, val);
+        for (Term t : effects)
+            t.replaceVariable(var, val);
     }
 }

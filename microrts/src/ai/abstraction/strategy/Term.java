@@ -1,9 +1,11 @@
 package ai.abstraction.strategy;
 
-class Term {
+import java.util.HashMap;
+
+public class Term {
     int functor;
     String[] parameters;
-    private static final HashMap<String, Integer> functorIntepretation = initializeFunctorIntepretation();
+    private static HashMap<String, Integer> functorIntepretation = initializeFunctorIntepretation();
 
     private static HashMap<String, Integer> initializeFunctorIntepretation() {
         functorIntepretation = new HashMap<String, Integer>();
@@ -50,6 +52,12 @@ class Term {
 
     public void setParameters(String[] p) {
         parameters = p;
+    }
+
+    public void replaceVariables(String var, String val) {
+        for (int i = 0; i < parameters.length; i++)
+            if (parameters[i].equals(var))
+                parameters[i] = val;
     }
 
     public Term clone() {

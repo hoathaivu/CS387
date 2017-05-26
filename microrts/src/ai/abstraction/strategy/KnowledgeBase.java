@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import ai.abstraction.strategy.Term;
 
-public KnowledgeBase {
+public class KnowledgeBase {
     List<Term> facts;
 
     public KnowledgeBase() {
