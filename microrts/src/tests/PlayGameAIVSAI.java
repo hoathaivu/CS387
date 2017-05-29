@@ -6,6 +6,8 @@ package tests;
 
 import ai.core.AI;
 import ai.*;
+import ai.abstraction.LightRush;
+import ai.abstraction.strategy.SimpleStrategy;
 import ai.core.ContinuingAI;
 import ai.evaluation.SimpleEvaluationFunction;
 import ai.mcts.naivemcts.NaiveMCTS;
@@ -36,8 +38,10 @@ public class PlayGameAIVSAI {
 //        PhysicalGameStateMouseJFrame w = new PhysicalGameStateMouseJFrame("Game State Visuakizer (Mouse)",400,400,pgsp);
 
         //first player
-        AI ai1 = new SimpleStrategy(utt, new AStarPathFinding());
+//        AI ai1 = new LightRush(utt);
+        AI ai1 = new SimpleStrategy(utt);
         //second player
+//        AI ai2 = new LightRush(utt);
         AI ai2 = new ContinuingAI(new NaiveMCTS(PERIOD, -1, 100, 20, 0.33f, 0.0f, 0.75f, new RandomBiasedAI(), new SimpleEvaluationFunction(), true));
 
         long nextTimeToUpdate = System.currentTimeMillis() + PERIOD;

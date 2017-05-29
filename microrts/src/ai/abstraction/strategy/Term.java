@@ -18,8 +18,8 @@ public class Term {
 
         //possible actions
         functorIntepretation.put("amove", 10);
-        functorIntepretation.put("atrain", 11);
-        functorIntepretation.put("abuild", 12);
+        functorIntepretation.put("abuild", 11);
+        functorIntepretation.put("atrain", 12);
         functorIntepretation.put("aharvest", 13);
         functorIntepretation.put("aattack", 14);
         functorIntepretation.put("aidle", 15);
@@ -54,7 +54,7 @@ public class Term {
         parameters = p;
     }
 
-    public void replaceVariables(String var, String val) {
+    public void replaceVariable(String var, String val) {
         for (int i = 0; i < parameters.length; i++)
             if (parameters[i].equals(var))
                 parameters[i] = val;

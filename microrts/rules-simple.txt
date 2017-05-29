@@ -25,9 +25,9 @@
 # - For each of the units we own try to execute the rules that match the unit type of the unit
 # - If any rule gets triggered, make the unit perform the action corresponding to the rule head
 
-doTrainWorker("Base") :- idle, own("Base"),~own("Worker"),enoughResourcesFor("Worker").
 doBuildBase("Worker") :- idle, own("Worker"),~own("Base"),enoughResourcesFor("Base").
 doBuildBarracks("Worker") :- idle, own("Worker"),own("Base"),~own("Barracks"),enoughResourcesFor("Barracks").
+doTrainWorker("Base") :- idle, own("Base"),~own("Worker"),enoughResourcesFor("Worker").
 doHarvest("Worker") :- idle, own("Base").
 doTrainLight("Barracks") :- idle, enoughResourcesFor("Light").
 doAttack("Light") :- idle.
