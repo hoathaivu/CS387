@@ -226,7 +226,7 @@ public class SimpleStrategy extends AbstractionLayerAI {
         if (kb == null)
             return null;
 
-        Term T = new Term(0 - T1.getFunctor(), new String[] {});
+        Term T = new Term(0 - T1.getFunctor(), T1.getParameters());
         for (Term S : kb.getFacts()) {
             HashMap<String, String> bindings = doSingleTermUnification(T, S);
             if (bindings != null)
